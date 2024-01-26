@@ -11,12 +11,13 @@ export function convertLatToDMM(decimalDegrees: number): string {
 
 export function convertLonToDMM(decimalDegrees: number): string {
   const abs = Math.abs(decimalDegrees);
-  const degrees = Math.floor(abs);
-  const minutes = ((abs - degrees) * 60).toFixed(3);
+  const DDD = Math.floor(abs);
+  const minutes = ((abs - DDD) * 60).toString();
+  const [MM, mmm] = minutes.split(".");
+
   const direction = decimalDegrees >= 0 ? "E" : "W";
 
-  return `${degrees.toString().padStart(3, "0")}${minutes.replace(
-    ".",
-    ""
-  )}${direction}`;
+  return `${DDD.toString().padStart(3, "0")}${MM.padStart(2, "0")}${mmm
+    .slice(0, 3)
+    .padStart(3, "0")}${direction}`;
 }

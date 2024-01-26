@@ -4,13 +4,17 @@ import { convertLatToDMM, convertLonToDMM } from "./utils/converter";
 import type { Point } from "geojson";
 import type { SenderPosition } from "./types/common";
 
+process.env.TZ = "UTC";
+
 const db = knex({
   client: "pg",
   connection: process.env.DATABASE_URL,
   searchPath: ["knex", "public"],
 });
 
-const searchAddress = "";
+// const searchAddress = "2016CA";
+const searchAddress = "FD6A5A";
+const searchInterval = 30; // hours
 
 if (!searchAddress) {
   console.log("No address provided");
@@ -20,6 +24,7 @@ if (!searchAddress) {
 const fixes = await db<SenderPosition>("sender_positions")
   .select("*")
   .where({ address: searchAddress })
+  .andWhereRaw(`"timestamp" > NOW() - INTERVAL '${searchInterval} HOURS'`)
   .orderBy("timestamp", "asc");
 
 if (fixes.length === 0) {
@@ -40,13 +45,13 @@ if (fixes.length === 0) {
 const lines: string[] = [];
 
 // Manufacturer Code (A XXX ABC FLIGHT:1)
-lines.push("AXXX");
+lines.push("AXXXABC FLIGHT:1");
 
 // UTC date of flight
 const date = fixes[0].timestamp;
 const year = date.getUTCFullYear().toString().slice(-2);
-const month = date.getUTCMonth() + 1;
-const day = date.getUTCDate();
+const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
+const day = date.getUTCDate().toString().padStart(2, "0");
 const formattedDate = `${day}${month}${year}`;
 
 // const date = "DDMMYY";
@@ -90,6 +95,10 @@ fixes.forEach((fix) => {
   const [lon, lat] = geometry.coordinates;
   const latDMS = convertLatToDMM(+lat);
   const lonDMS = convertLonToDMM(+lon);
+
+  if (latDMS.length != 8) throw new Error("Invalid DMS lat");
+  if (lonDMS.length != 9) throw new Error("Invalid DMS lon");
+
   const gpsAlt = fix.altitude.toString().padStart(5, "0");
   const pressureAlt = "00000";
   const accuracy = "000";
@@ -104,5 +113,3 @@ console.log("Date:", formattedDate);
 console.log("Number of fixes:", fixes.length);
 
 await Bun.write(`${fixes[0].address}-${formattedDate}.igc`, lines.join("\n"));
-
-console.log("done");
