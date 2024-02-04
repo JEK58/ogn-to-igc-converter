@@ -12,8 +12,8 @@ const db = knex({
   searchPath: ["knex", "public"],
 });
 
-// const searchAddress = "2016CA";
-const searchAddress = "FD6A5A";
+const searchAddress = "2016CA";
+// const searchAddress = "FD6A5A";
 const searchInterval = 30; // hours
 
 if (!searchAddress) {
@@ -113,3 +113,5 @@ console.log("Date:", formattedDate);
 console.log("Number of fixes:", fixes.length);
 
 await Bun.write(`${fixes[0].address}-${formattedDate}.igc`, lines.join("\n"));
+
+await db.destroy();
